@@ -4,9 +4,12 @@
     
     <!-- 文件选择区域 -->
     <div class="file-selector">
-      <button @click="loadLocalFile" class="load-btn">加载本地Excel文件</button>
+      <input type="file" ref="fileInput" @change="handleFileSelect" accept=".xlsx,.xls" class="file-input" />
+      <button @click="triggerFileInput" class="select-file-btn">选择Excel文件</button>
+      <button @click="loadLocalFile" class="load-btn">加载默认Excel</button>
       <button v-if="workbooks.length > 0" @click="clearData" class="clear-btn">清除数据</button>
       <div v-if="loading" class="loading">加载中...</div>
+      <div v-if="selectedFile" class="file-info">已选择文件: {{ selectedFile }}</div>
     </div>
     
     <!-- 工作表选择器 -->
@@ -101,7 +104,8 @@ export default {
       currentPage: 1,
       pageSize: 10,
       pageSizeOptions: [5, 10, 20, 50, 100],
-      jumpToPage: 1
+      jumpToPage: 1,
+      selectedFile: null
     };
   },
   computed: {
@@ -163,9 +167,69 @@ export default {
     }
   },
   methods: {
+    // 触发文件选择对话框
+    triggerFileInput() {
+      this.$refs.fileInput.click();
+    },
+    
+    // 处理文件选择
+    handleFileSelect(event) {
+      const file = event.target.files[0];
+      if (!file) return;
+      
+      this.loading = true;
+      this.selectedFile = file.name;
+      this.fileName = file.name;
+      
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        try {
+          const data = new Uint8Array(e.target.result);
+          const workbook = XLSX.read(data, { type: 'array' });
+          
+          // 解析所有工作表
+          this.workbooks = workbook.SheetNames.map(sheetName => {
+            const worksheet = workbook.Sheets[sheetName];
+            const jsonData = XLSX.utils.sheet_to_json(worksheet);
+            const headers = jsonData.length > 0 ? Object.keys(jsonData[0]) : [];
+            
+            return {
+              name: sheetName,
+              data: jsonData,
+              headers: headers
+            };
+          });
+          
+          // 设置当前工作表为第一个
+          this.currentWorkbookIndex = 0;
+          
+          // 重置分页信息
+          this.currentPage = 1;
+          this.jumpToPage = 1;
+        } catch (error) {
+          console.error('解析Excel文件出错:', error);
+          alert('解析Excel文件出错，请检查文件格式是否正确');
+        } finally {
+          this.loading = false;
+        }
+      };
+      
+      reader.onerror = () => {
+        console.error('读取文件失败');
+        alert('读取文件失败');
+        this.loading = false;
+      };
+      
+      reader.readAsArrayBuffer(file);
+      
+      // 重置文件输入，允许选择同一文件
+      event.target.value = '';
+    },
+    
     // 加载本地Excel文件
     loadLocalFile() {
       this.loading = true;
+      this.selectedFile = null;
       
       // 使用fetch API加载本地文件
       fetch(LOCAL_EXCEL_FILE)
@@ -198,6 +262,8 @@ export default {
             // 重置分页信息
             this.currentPage = 1;
             this.jumpToPage = 1;
+            
+            this.fileName = '系统默认Excel文件';
           } catch (error) {
             console.error('解析Excel文件出错:', error);
             alert('解析Excel文件出错，请检查文件格式是否正确');
@@ -219,6 +285,7 @@ export default {
       this.currentWorkbookIndex = 0;
       this.currentPage = 1;
       this.jumpToPage = 1;
+      this.selectedFile = null;
     },
     
     // 页码导航方法
@@ -264,7 +331,8 @@ export default {
   },
   // 组件挂载后自动加载本地文件
   mounted() {
-    this.loadLocalFile();
+    // 可以选择是否在组件挂载时自动加载本地文件
+    // this.loadLocalFile();
   }
 };
 </script>
@@ -281,10 +349,29 @@ h2 {
 .file-selector {
   display: flex;
   align-items: center;
+  flex-wrap: wrap;
   margin-bottom: 20px;
   padding: 15px;
   background-color: #f8f9fa;
   border-radius: 5px;
+}
+
+.file-input {
+  display: none; /* 隐藏原生文件输入框 */
+}
+
+.select-file-btn {
+  padding: 8px 15px;
+  background-color: #2196F3;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  margin-right: 10px;
+}
+
+.select-file-btn:hover {
+  background-color: #0b7dda;
 }
 
 .load-btn {
@@ -294,6 +381,7 @@ h2 {
   border: none;
   border-radius: 4px;
   cursor: pointer;
+  margin-right: 10px;
 }
 
 .load-btn:hover {
@@ -301,7 +389,6 @@ h2 {
 }
 
 .clear-btn {
-  margin-left: 15px;
   padding: 8px 15px;
   background-color: #f44336;
   color: white;
@@ -318,6 +405,12 @@ h2 {
   margin-left: 15px;
   color: #2196F3;
   font-weight: bold;
+}
+
+.file-info {
+  margin-left: 15px;
+  font-weight: bold;
+  color: #555;
 }
 
 /* 工作表选择器样式 */

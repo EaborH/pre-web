@@ -11,6 +11,7 @@ import Login from '@/views/login/index.vue';
 import Layout from '@/views/layout/index.vue';
 import Importance from '@/views/importance/index.vue';
 import PtsData from '@/views/ptsdata/index.vue';
+import DataPre from '@/views/datapre/index.vue';
 
 const routes = [
   { path: '/', 
@@ -27,6 +28,7 @@ const routes = [
       { path: '/log', component: Log },
       { path: '/importance', component: Importance },
       { path: '/ptsdata', component: PtsData },
+      { path: '/datapre', component: DataPre }
     ]
   },
   { path: '/login', component: Login }

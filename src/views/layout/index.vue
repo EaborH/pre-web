@@ -66,15 +66,23 @@ const logout = () => {
               <el-menu-item index="/pts">
                 <el-icon><UserFilled /></el-icon>病人管理
               </el-menu-item>
+            </el-sub-menu>
+
+            <el-sub-menu index="/dataPre">
+              <template #title>
+                <el-icon><Paperclip /></el-icon> 数据分析与预测
+              </template>
               <el-menu-item index="/ptsdata">
-                <el-icon><UserFilled /></el-icon>病人数据
+                <el-icon><List /></el-icon>病人数据
               </el-menu-item>
               <el-menu-item index="/importance">
-                <el-icon><UserFilled /></el-icon>重要性分析
+                <el-icon><DataAnalysis /></el-icon>重要性分析
               </el-menu-item>
-              
+              <el-menu-item index="/datapre">
+                <el-icon><Platform /></el-icon>预测
+              </el-menu-item>
             </el-sub-menu>
-            
+
             <!-- 系统信息管理 -->
             <el-sub-menu index="/system">
               <template #title>
